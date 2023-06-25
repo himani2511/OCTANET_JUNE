@@ -1,106 +1,109 @@
-const taskInput = document.querySelector(".task-input input"),
-filters = document.querySelectorAll(".filters span"),
-clearAll = document.querySelector(".clear-btn"),
-taskBox = document.querySelector(".task-box");
+console.log("Welcome to Spotify");
 
-let editId,
-isEditTask = false,
-todos = JSON.parse(localStorage.getItem("todo-list"));
+// Initialize the Variables
+let songIndex = 0;
+let audioElement = new Audio('songs/As-It-Was.mp3');
+let masterPlay = document.getElementById('masterPlay');
+let myProgressBar = document.getElementById('myProgressBar');
+let gif = document.getElementById('gif');
+let masterSongName = document.getElementById('masterSongName');
+let songItems = Array.from(document.getElementsByClassName('songItem'));
 
-filters.forEach(btn => {
-    btn.addEventListener("click", () => {
-        document.querySelector("span.active").classList.remove("active");
-        btn.classList.add("active");
-        showTodo(btn.id);
-    });
-});
+let songs = [
+    {songName: " Harry Styles - As-It-Was", filePath: "songs/1.mp3", coverPath: "covers/1.jpg"},
+    {songName: "Sia - Cheap-Thrills", filePath: "songs/Cheap-Thrills.mp3", coverPath: "covers/2.jpeg"},
+    {songName: "The Chainsmoker - Closer", filePath: "songs/Closer.mp3", coverPath: "covers/3.jpg"},
+    {songName: "Alan Walker - Faded", filePath: "songs/Faded.mp3", coverPath: "covers/4.jpeg"},
+    {songName: "DJ Snake - Lean On", filePath: "songs/Lean On.mp3", coverPath: "covers/5.jpeg"},
+    {songName: "Let Me Love You", filePath: "songs/Let Me Love You.mp3", coverPath: "covers/6.jpg"},
+    {songName: "Miguel-Sure-Thing", filePath: "songs/Miguel-Sure-Thing.mp3", coverPath: "covers/7.jpg"},
+    {songName: "Roar", filePath: "songs/Roar.mp3", coverPath: "covers/8.jpg"},
+    {songName: "Unholy", filePath: "songs/Unholy.mp3", coverPath: "covers/9.jpg"},
+    {songName: "Unstoppable", filePath: "songs/Unstoppable.mp3", coverPath: "covers/10.jpg"},
+]
 
-function showTodo(filter) {
-    let liTag = "";
-    if(todos) {
-        todos.forEach((todo, id) => {
-            let completed = todo.status == "completed" ? "checked" : "";
-            if(filter == todo.status || filter == "all") {
-                liTag += `<li class="task">
-                            <label for="${id}">
-                                <input onclick="updateStatus(this)" type="checkbox" id="${id}" ${completed}>
-                                <p class="${completed}">${todo.name}</p>
-                            </label>
-                            <div class="settings">
-                                <i onclick="showMenu(this)" class="uil uil-ellipsis-h"></i>
-                                <ul class="task-menu">
-                                    <li onclick='editTask(${id}, "${todo.name}")'><i class="uil uil-pen"></i>Edit</li>
-                                    <li onclick='deleteTask(${id}, "${filter}")'><i class="uil uil-trash"></i>Delete</li>
-                                </ul>
-                            </div>
-                        </li>`;
-            }
-        });
+songItems.forEach((element, i)=>{ 
+    element.getElementsByTagName("img")[0].src = songs[i].coverPath; 
+    element.getElementsByClassName("songName")[0].innerText = songs[i].songName; 
+})
+ 
+
+// Handle play/pause click
+masterPlay.addEventListener('click', ()=>{
+    if(audioElement.paused || audioElement.currentTime<=0){
+        audioElement.play();
+        masterPlay.classList.remove('fa-play-circle');
+        masterPlay.classList.add('fa-pause-circle');
+        gif.style.opacity = 1;
     }
-    taskBox.innerHTML = liTag || `<span>You don't have any task here</span>`;
-    let checkTask = taskBox.querySelectorAll(".task");
-    !checkTask.length ? clearAll.classList.remove("active") : clearAll.classList.add("active");
-    taskBox.offsetHeight >= 300 ? taskBox.classList.add("overflow") : taskBox.classList.remove("overflow");
-}
-showTodo("all");
-
-function showMenu(selectedTask) {
-    let menuDiv = selectedTask.parentElement.lastElementChild;
-    menuDiv.classList.add("show");
-    document.addEventListener("click", e => {
-        if(e.target.tagName != "I" || e.target != selectedTask) {
-            menuDiv.classList.remove("show");
-        }
-    });
-}
-
-function updateStatus(selectedTask) {
-    let taskName = selectedTask.parentElement.lastElementChild;
-    if(selectedTask.checked) {
-        taskName.classList.add("checked");
-        todos[selectedTask.id].status = "completed";
-    } else {
-        taskName.classList.remove("checked");
-        todos[selectedTask.id].status = "pending";
+    else{
+        audioElement.pause();
+        masterPlay.classList.remove('fa-pause-circle');
+        masterPlay.classList.add('fa-play-circle');
+        gif.style.opacity = 0;
     }
-    localStorage.setItem("todo-list", JSON.stringify(todos))
+})
+// Listen to Events
+audioElement.addEventListener('timeupdate', ()=>{ 
+    // Update Seekbar
+    progress = parseInt((audioElement.currentTime/audioElement.duration)* 100); 
+    myProgressBar.value = progress;
+})
+
+myProgressBar.addEventListener('change', ()=>{
+    audioElement.currentTime = myProgressBar.value * audioElement.duration/100;
+})
+
+const makeAllPlays = ()=>{
+    Array.from(document.getElementsByClassName('songItemPlay')).forEach((element)=>{
+        element.classList.remove('fa-pause-circle');
+        element.classList.add('fa-play-circle');
+    })
 }
 
-function editTask(taskId, textName) {
-    editId = taskId;
-    isEditTask = true;
-    taskInput.value = textName;
-    taskInput.focus();
-    taskInput.classList.add("active");
-}
+Array.from(document.getElementsByClassName('songItemPlay')).forEach((element)=>{
+    element.addEventListener('click', (e)=>{ 
+        makeAllPlays();
+        songIndex = parseInt(e.target.id);
+        e.target.classList.remove('fa-play-circle');
+        e.target.classList.add('fa-pause-circle');
+        audioElement.src = `songs/${songIndex+1}.mp3`;
+        masterSongName.innerText = songs[songIndex].songName;
+        audioElement.currentTime = 0;
+        audioElement.play();
+        gif.style.opacity = 1;
+        masterPlay.classList.remove('fa-play-circle');
+        masterPlay.classList.add('fa-pause-circle');
+    })
+})
 
-function deleteTask(deleteId, filter) {
-    isEditTask = false;
-    todos.splice(deleteId, 1);
-    localStorage.setItem("todo-list", JSON.stringify(todos));
-    showTodo(filter);
-}
-
-clearAll.addEventListener("click", () => {
-    isEditTask = false;
-    todos.splice(0, todos.length);
-    localStorage.setItem("todo-list", JSON.stringify(todos));
-    showTodo()
-});
-
-taskInput.addEventListener("keyup", e => {
-    let userTask = taskInput.value.trim();
-    if(e.key == "Enter" && userTask) {
-        if(!isEditTask) {
-            todos = !todos ? [] : todos;
-            let taskInfo = {name: userTask, status: "pending"};
-            todos.push(taskInfo);
-        } else {
-            isEditTask = false;
-            todos[editId].name = userTask;
-        }
-        taskInput.value = "";
-        localStorage.setItem("todo-list", JSON.stringify(todos));
-        showTodo(document.querySelector("span.active").id);
+document.getElementById('next').addEventListener('click', ()=>{
+    if(songIndex>=9){
+        songIndex = 0
     }
-});
+    else{
+        songIndex += 1;
+    }
+    audioElement.src = `songs/${songIndex+1}.mp3`;
+    masterSongName.innerText = songs[songIndex].songName;
+    audioElement.currentTime = 0;
+    audioElement.play();
+    masterPlay.classList.remove('fa-play-circle');
+    masterPlay.classList.add('fa-pause-circle');
+
+})
+
+document.getElementById('previous').addEventListener('click', ()=>{
+    if(songIndex<=0){
+        songIndex = 0
+    }
+    else{
+        songIndex -= 1;
+    }
+    audioElement.src = `songs/${songIndex+1}.mp3`;
+    masterSongName.innerText = songs[songIndex].songName;
+    audioElement.currentTime = 0;
+    audioElement.play();
+    masterPlay.classList.remove('fa-play-circle');
+    masterPlay.classList.add('fa-pause-circle');
+})
